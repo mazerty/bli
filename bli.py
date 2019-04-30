@@ -213,6 +213,7 @@ def create_distribution():
         "Enabled": True,
         "ViewerCertificate": {"ACMCertificateArn": get_certificate_arn(), "SSLSupportMethod": "sni-only"}
     })
+    time.sleep(10 * 60)  # the waiter below has a limited number of retries and it's not enough sometimes...
     cloudfront.get_waiter("distribution_deployed").wait(Id=response.get("Distribution").get("Id"))
 
 
