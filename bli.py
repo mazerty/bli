@@ -10,6 +10,7 @@ region = "us-east-1"  # seems like we're stuck with the default zone for the who
 root_domain = "mazerty.fr"
 subdomain = "mirror"
 bucket_name = subdomain + "." + root_domain
+source = "upload"
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
@@ -37,7 +38,6 @@ def delete_bucket():
 
 
 def upload_files():
-    source = "upload"
     for dirpath, _, filenames in os.walk(source):
         for filename in filenames:
             local_path = os.path.join(dirpath, filename)
