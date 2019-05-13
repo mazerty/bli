@@ -38,7 +38,11 @@ def delete_bucket():
 
 
 def upload_files():
-    for dirpath, _, filenames in os.walk(source):
+    for dirpath, dirnames, filenames in os.walk(source):
+        # filter hidden files and directories
+        filenames = [f for f in filenames if not f[0] == '.']
+        dirnames[:] = [d for d in dirnames if not d[0] == '.']
+
         for filename in filenames:
             local_path = os.path.join(dirpath, filename)
             relative_path = os.path.relpath(local_path, source)
