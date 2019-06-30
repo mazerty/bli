@@ -7,9 +7,9 @@ import boto3
 
 region = "us-east-1"  # seems like we're stuck with the default zone for the whole stack to come together
 root_domain = "mazerty.fr"
-subdomain = "mirror"
+subdomain = "zebr0"
 bucket_name = subdomain + "." + root_domain
-source = "upload"
+source = "/home/ubuntu/workspace/zebr0-conf"
 
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
