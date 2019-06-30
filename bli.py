@@ -210,6 +210,7 @@ def create_distribution():
             "ForwardedValues": {"QueryString": False, "Cookies": {"Forward": "none"}},
             "TrustedSigners": {"Enabled": False, "Quantity": 0},
             "ViewerProtocolPolicy": "redirect-to-https",
+            "DefaultTTL": 0,
             "MinTTL": 0
         },
         "Comment": "",
