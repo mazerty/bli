@@ -11,6 +11,26 @@ subdomain = "zebr0"
 bucket_name = subdomain + "." + root_domain
 source = "/home/ubuntu/workspace/zebr0-conf"
 
+# deploy:
+# create_certificate()
+# wait_domain_validation_information()
+# create_domain_validation_resource_record_set()
+# wait_domain_validation_success()
+
+# create_bucket()
+# create_distribution()
+# create_resource_record_set()
+
+
+# undeploy:
+# delete_resource_record_set()
+# delete_distribution()
+# delete_files()
+# delete_bucket()
+
+# delete_domain_validation_resource_record_set()
+# delete_certificate()
+
 logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger()
 
@@ -236,30 +256,3 @@ def delete_distribution():
 
     # then we can delete it
     cloudfront.delete_distribution(Id=distribution_id, IfMatch=disabled_etag)
-
-
-def deploy():
-    create_bucket()
-    if not get_certificate_arn():
-        create_certificate()
-    wait_domain_validation_information()
-    if not get_domain_validation_resource_record_set():
-        create_domain_validation_resource_record_set()
-    wait_domain_validation_success()
-    if not get_distribution():
-        create_distribution()
-    if not get_resource_record_set():
-        create_resource_record_set()
-
-
-def undeploy():
-    if get_resource_record_set():
-        delete_resource_record_set()
-    if get_distribution():
-        delete_distribution()
-    if get_domain_validation_resource_record_set():
-        delete_domain_validation_resource_record_set()
-    if get_certificate_arn():
-        delete_certificate()
-    delete_files()
-    delete_bucket()
