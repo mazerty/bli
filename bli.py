@@ -1,3 +1,4 @@
+import hashlib
 import logging
 import os
 import tempfile
@@ -54,6 +55,14 @@ def create_bucket():
 def delete_bucket():
     s3.delete_bucket(Bucket=bucket_name)
     s3.get_waiter("bucket_not_exists").wait(Bucket=bucket_name)
+
+
+def _md5(path):
+    md5 = hashlib.md5()
+    with open(path, "rb") as file:
+        for chunk in iter(lambda: file.read(4096), b""):
+            md5.update(chunk)
+    return md5.hexdigest()
 
 
 def upload_files():
