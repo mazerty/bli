@@ -74,7 +74,7 @@ def upload_files():
         for filename in filenames:
             local_path = os.path.join(dirpath, filename)
             relative_path = os.path.relpath(local_path, source)
-            s3.upload_file(local_path, bucket_name, relative_path, ExtraArgs={"ACL": "public-read"})
+            s3.upload_file(local_path, bucket_name, relative_path, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": _md5(local_path)}})
             s3.get_waiter("object_exists").wait(Bucket=bucket_name, Key=relative_path)
 
 
