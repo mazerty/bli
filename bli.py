@@ -42,19 +42,19 @@ acm = session.client(service_name="acm")
 cloudfront = session.client(service_name="cloudfront")
 
 
-def check_bucket():
-    s3.head_bucket(Bucket=bucket_name)
+def check_bucket(_bucket_name=bucket_name):
+    s3.head_bucket(Bucket=_bucket_name)
 
 
-def create_bucket():
-    s3.create_bucket(Bucket=bucket_name, ACL="public-read")
-    s3.get_waiter("bucket_exists").wait(Bucket=bucket_name)
-    s3.put_bucket_website(Bucket=bucket_name, WebsiteConfiguration={"IndexDocument": {"Suffix": "index.html"}})
+def create_bucket(_bucket_name=bucket_name):
+    s3.create_bucket(Bucket=_bucket_name, ACL="public-read")
+    s3.get_waiter("bucket_exists").wait(Bucket=_bucket_name)
+    s3.put_bucket_website(Bucket=_bucket_name, WebsiteConfiguration={"IndexDocument": {"Suffix": "index.html"}})
 
 
-def delete_bucket():
-    s3.delete_bucket(Bucket=bucket_name)
-    s3.get_waiter("bucket_not_exists").wait(Bucket=bucket_name)
+def delete_bucket(_bucket_name=bucket_name):
+    s3.delete_bucket(Bucket=_bucket_name)
+    s3.get_waiter("bucket_not_exists").wait(Bucket=_bucket_name)
 
 
 def _md5(path):
