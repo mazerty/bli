@@ -75,6 +75,17 @@ def list_remote_files(_bucket_name=bucket_name):
             break
 
 
+def list_local_files(_source=source):
+    for dirpath, dirnames, filenames in os.walk(_source):
+        # filter hidden directories, see https://stackoverflow.com/questions/19859840
+        dirnames[:] = [d for d in dirnames if d[0] != "."]
+
+        for filename in sorted(filenames):
+            if filename[0] != ".":
+                local_path = os.path.join(dirpath, filename)
+                yield os.path.relpath(local_path, _source), _md5(local_path)
+
+
 def upload_files(_bucket_name=bucket_name, _source=source):
     for dirpath, dirnames, filenames in os.walk(_source):
         # filter hidden files and directories
