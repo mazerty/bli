@@ -103,13 +103,9 @@ def download_files():
 
 
 def delete_files(_bucket_name=bucket_name):
-    while True:
-        response = s3.list_objects_v2(Bucket=_bucket_name)
-        for item in response.get("Contents", []):
-            s3.delete_object(Bucket=_bucket_name, Key=item.get("Key"))
-            s3.get_waiter("object_not_exists").wait(Bucket=_bucket_name, Key=item.get("Key"))
-        if not response.get("IsTruncated"):
-            break
+    for key, _ in list_remote_files(_bucket_name):
+        s3.delete_object(Bucket=_bucket_name, Key=key)
+        s3.get_waiter("object_not_exists").wait(Bucket=_bucket_name, Key=key)
 
 
 def get_certificate_arn():
