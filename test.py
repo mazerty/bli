@@ -1,15 +1,20 @@
 #!/usr/bin/python3 -u
 
 import os.path
-import pathlib
 import tempfile
 import unittest
 
-import prfg
+import prbg
 
 import bli
 
 bucket_name = "test.mazerty.fr"
+
+
+def write_prf(directory, name, size=1000):
+    path = os.path.join(directory, name)
+    prbg.prbg_to_file(name, size, path)
+    return path
 
 
 class TestCase(unittest.TestCase):
@@ -20,9 +25,7 @@ class TestCase(unittest.TestCase):
 
     def test_md5(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            dummy = pathlib.Path(os.path.join(tmpdir, "dummy"))
-            dummy.write_bytes(prfg.pseudo_random_bytearray("dummy", 1000))
-            self.assertEqual(bli._md5(dummy), "dc66e4a23e6b7873679da03302c37331")
+            self.assertEqual(bli._md5(write_prf(tmpdir, "dummy")), "dc66e4a23e6b7873679da03302c37331")
 
 
 unittest.main(verbosity=2)
