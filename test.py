@@ -19,9 +19,20 @@ def write_prf(directory, name, size=1000):
 
 class TestCase(unittest.TestCase):
     def test_bucket(self):
-        bli.create_bucket(bucket_name)
-        bli.check_bucket(bucket_name)
-        bli.delete_bucket(bucket_name)
+        with tempfile.TemporaryDirectory() as tmpdir:
+            file1 = write_prf(tmpdir, "file1")
+            file2 = write_prf(tmpdir, "file2")
+            file3 = write_prf(tmpdir, "file3")
+
+            bli.create_bucket(bucket_name)
+            bli.check_bucket(bucket_name)
+            bli.upload_files(bucket_name, tmpdir)
+            self.assertListEqual(list(bli.list_remote_files(bucket_name)), [("file1", bli._md5(file1)),
+                                                                            ("file2", bli._md5(file2)),
+                                                                            ("file3", bli._md5(file3))])
+            bli.delete_files(bucket_name)
+            self.assertListEqual(list(bli.list_remote_files(bucket_name)), [])
+            bli.delete_bucket(bucket_name)
 
     def test_md5(self):
         with tempfile.TemporaryDirectory() as tmpdir:

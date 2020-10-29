@@ -65,17 +65,27 @@ def _md5(path):
     return md5.hexdigest()
 
 
-def upload_files():
-    for dirpath, dirnames, filenames in os.walk(source):
+def list_remote_files(_bucket_name=bucket_name):
+    while True:
+        response = s3.list_objects_v2(Bucket=_bucket_name)
+        for item in response.get("Contents", []):
+            if item.get("Size") != 0:
+                yield item.get("Key"), s3.head_object(Bucket=_bucket_name, Key=item.get("Key")).get("Metadata", {}).get("md5", "")
+        if not response.get("IsTruncated"):
+            break
+
+
+def upload_files(_bucket_name=bucket_name, _source=source):
+    for dirpath, dirnames, filenames in os.walk(_source):
         # filter hidden files and directories
         filenames = [f for f in filenames if not f[0] == '.']
         dirnames[:] = [d for d in dirnames if not d[0] == '.']
 
         for filename in filenames:
             local_path = os.path.join(dirpath, filename)
-            relative_path = os.path.relpath(local_path, source)
-            s3.upload_file(local_path, bucket_name, relative_path, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": _md5(local_path)}})
-            s3.get_waiter("object_exists").wait(Bucket=bucket_name, Key=relative_path)
+            relative_path = os.path.relpath(local_path, _source)
+            s3.upload_file(local_path, _bucket_name, relative_path, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": _md5(local_path)}})
+            s3.get_waiter("object_exists").wait(Bucket=_bucket_name, Key=relative_path)
 
 
 def download_files():
@@ -92,12 +102,12 @@ def download_files():
     return target
 
 
-def delete_files():
+def delete_files(_bucket_name=bucket_name):
     while True:
-        response = s3.list_objects_v2(Bucket=bucket_name)
+        response = s3.list_objects_v2(Bucket=_bucket_name)
         for item in response.get("Contents", []):
-            s3.delete_object(Bucket=bucket_name, Key=item.get("Key"))
-            s3.get_waiter("object_not_exists").wait(Bucket=bucket_name, Key=item.get("Key"))
+            s3.delete_object(Bucket=_bucket_name, Key=item.get("Key"))
+            s3.get_waiter("object_not_exists").wait(Bucket=_bucket_name, Key=item.get("Key"))
         if not response.get("IsTruncated"):
             break
 
