@@ -92,15 +92,14 @@ def upload_files(_bucket_name=bucket_name, _source=source):
         s3.get_waiter("object_exists").wait(Bucket=_bucket_name, Key=file)
 
 
-def download_files():
-    target = tempfile.mkdtemp()
+def download_files(_bucket_name=bucket_name, target=tempfile.mkdtemp()):
     while True:
-        response = s3.list_objects_v2(Bucket=bucket_name)
+        response = s3.list_objects_v2(Bucket=_bucket_name)
         for item in response.get("Contents", []):
             if item.get("Size") != 0:
                 local_path = os.path.join(target, item.get("Key"))
                 os.makedirs(os.path.dirname(local_path), exist_ok=True)  # ensures that required subdirectories exist before downloading the object
-                s3.download_file(bucket_name, item.get("Key"), local_path)
+                s3.download_file(_bucket_name, item.get("Key"), local_path)
         if not response.get("IsTruncated"):
             break
     return target

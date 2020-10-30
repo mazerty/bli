@@ -20,33 +20,41 @@ def write_prf(directory, name, size=1000):
 
 class TestCase(unittest.TestCase):
     def test_bucket(self):
-        with tempfile.TemporaryDirectory() as tmpdir:
-            tmpdir = pathlib.Path(tmpdir)
-            directory = tmpdir.joinpath("directory")
+        with tempfile.TemporaryDirectory() as upload:
+            upload = pathlib.Path(upload)
+            directory = upload.joinpath("directory")
             directory.mkdir()
-            hidden_directory = tmpdir.joinpath(".hidden_directory")
+            hidden_directory = upload.joinpath(".hidden_directory")
             hidden_directory.mkdir()
 
-            write_prf(tmpdir, ".hidden_file")
+            write_prf(upload, ".hidden_file")
             write_prf(directory, ".nested_hidden_file")
             write_prf(hidden_directory, "ignored_file")
 
-            file1 = write_prf(tmpdir, "file1")
-            file2 = write_prf(tmpdir, "file2")
-            file3 = write_prf(tmpdir, "file3")
+            file1 = write_prf(upload, "file1")
+            file2 = write_prf(upload, "file2")
+            file3 = write_prf(upload, "file3")
             file4 = write_prf(directory, "file4")
-            self.assertListEqual(list(bli.list_local_files(tmpdir)), [("file1", bli._md5(file1)),
+            self.assertListEqual(list(bli.list_local_files(upload)), [("file1", bli._md5(file1)),
                                                                       ("file2", bli._md5(file2)),
                                                                       ("file3", bli._md5(file3)),
                                                                       ("directory/file4", bli._md5(file4))])
 
             bli.create_bucket(bucket_name)
             bli.check_bucket(bucket_name)
-            bli.upload_files(bucket_name, tmpdir)
+            bli.upload_files(bucket_name, upload)
             self.assertListEqual(list(bli.list_remote_files(bucket_name)), [("directory/file4", bli._md5(file4)),
                                                                             ("file1", bli._md5(file1)),
                                                                             ("file2", bli._md5(file2)),
                                                                             ("file3", bli._md5(file3))])
+
+            with tempfile.TemporaryDirectory() as download:
+                bli.download_files(bucket_name, download)
+                self.assertListEqual(list(bli.list_local_files(download)), [("file1", bli._md5(file1)),
+                                                                            ("file2", bli._md5(file2)),
+                                                                            ("file3", bli._md5(file3)),
+                                                                            ("directory/file4", bli._md5(file4))])
+
             bli.delete_files(bucket_name)
             self.assertListEqual(list(bli.list_remote_files(bucket_name)), [])
             bli.delete_bucket(bucket_name)
