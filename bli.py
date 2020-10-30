@@ -87,16 +87,9 @@ def list_local_files(_source=source):
 
 
 def upload_files(_bucket_name=bucket_name, _source=source):
-    for dirpath, dirnames, filenames in os.walk(_source):
-        # filter hidden files and directories
-        filenames = [f for f in filenames if not f[0] == '.']
-        dirnames[:] = [d for d in dirnames if not d[0] == '.']
-
-        for filename in filenames:
-            local_path = os.path.join(dirpath, filename)
-            relative_path = os.path.relpath(local_path, _source)
-            s3.upload_file(local_path, _bucket_name, relative_path, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": _md5(local_path)}})
-            s3.get_waiter("object_exists").wait(Bucket=_bucket_name, Key=relative_path)
+    for file, md5 in list_local_files(_source):
+        s3.upload_file(os.path.join(_source, file), _bucket_name, file, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": md5}})
+        s3.get_waiter("object_exists").wait(Bucket=_bucket_name, Key=file)
 
 
 def download_files():
