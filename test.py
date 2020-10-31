@@ -10,9 +10,13 @@ import prbg
 import bli
 
 bucket_name = "test.mazerty.fr"
+result = {("file1", "e382ac6f66df7fb71dae6292810182eb"),
+          ("file2", "260b6f5bf4fdfe7be7cea1737b41e797"),
+          ("file3", "7d5f31ffd43f957a4f4f8982ef65b12d"),
+          ("directory/file4", "803ab14c32a1b1cdf9b19d7417908e43")}
 
 
-def write_prf(directory, name, size=1000):
+def _write_prf(directory, name, size=1000):
     path = os.path.join(directory, name)
     prbg.prbg_to_file(name, size, path)
     return path
@@ -20,48 +24,38 @@ def write_prf(directory, name, size=1000):
 
 class TestCase(unittest.TestCase):
     def test_bucket(self):
-        with tempfile.TemporaryDirectory() as upload:
-            upload = pathlib.Path(upload)
-            directory = upload.joinpath("directory")
+        with tempfile.TemporaryDirectory() as tmpdir:
+            tmpdir = pathlib.Path(tmpdir)
+            directory = tmpdir.joinpath("directory")
             directory.mkdir()
-            hidden_directory = upload.joinpath(".hidden_directory")
+            hidden_directory = tmpdir.joinpath(".hidden_directory")
             hidden_directory.mkdir()
 
-            write_prf(upload, ".hidden_file")
-            write_prf(directory, ".nested_hidden_file")
-            write_prf(hidden_directory, "ignored_file")
+            _write_prf(tmpdir, ".hidden_file")
+            _write_prf(directory, ".nested_hidden_file")
+            _write_prf(hidden_directory, "ignored_file")
 
-            file1 = write_prf(upload, "file1")
-            file2 = write_prf(upload, "file2")
-            file3 = write_prf(upload, "file3")
-            file4 = write_prf(directory, "file4")
-            self.assertListEqual(list(bli.list_local_files(upload)), [("file1", bli._md5(file1)),
-                                                                      ("file2", bli._md5(file2)),
-                                                                      ("file3", bli._md5(file3)),
-                                                                      ("directory/file4", bli._md5(file4))])
+            _write_prf(tmpdir, "file1")
+            _write_prf(tmpdir, "file2")
+            _write_prf(tmpdir, "file3")
+            _write_prf(directory, "file4")
+            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result)
 
             bli.create_bucket(bucket_name)
-            bli.check_bucket(bucket_name)
-            bli.upload_files(bucket_name, upload)
-            self.assertListEqual(list(bli.list_remote_files(bucket_name)), [("directory/file4", bli._md5(file4)),
-                                                                            ("file1", bli._md5(file1)),
-                                                                            ("file2", bli._md5(file2)),
-                                                                            ("file3", bli._md5(file3))])
+            bli.upload_files(bucket_name, tmpdir)
+            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result)
 
-            with tempfile.TemporaryDirectory() as download:
-                bli.download_files(bucket_name, download)
-                self.assertListEqual(list(bli.list_local_files(download)), [("file1", bli._md5(file1)),
-                                                                            ("file2", bli._md5(file2)),
-                                                                            ("file3", bli._md5(file3)),
-                                                                            ("directory/file4", bli._md5(file4))])
+        with tempfile.TemporaryDirectory() as tmpdir:
+            bli.download_files(bucket_name, tmpdir)
+            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result)
 
-            bli.delete_files(bucket_name)
-            self.assertListEqual(list(bli.list_remote_files(bucket_name)), [])
-            bli.delete_bucket(bucket_name)
+        bli.delete_files(bucket_name)
+        self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), set())
+        bli.delete_bucket(bucket_name)
 
     def test_md5(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            self.assertEqual(bli._md5(write_prf(tmpdir, "dummy")), "dc66e4a23e6b7873679da03302c37331")
+            self.assertEqual(bli._md5(_write_prf(tmpdir, "dummy")), "dc66e4a23e6b7873679da03302c37331")
 
 
 unittest.main(verbosity=2)
