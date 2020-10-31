@@ -82,9 +82,16 @@ def _yield_local_relative_paths_md5(source=default_source):
 
 
 def upload_files(bucket_name=default_bucket_name, source=default_source):
-    for file, md5 in _yield_local_relative_paths_md5(source):
-        s3.upload_file(os.path.join(source, file), bucket_name, file, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": md5}})
-        s3.get_waiter("object_exists").wait(Bucket=bucket_name, Key=file)
+    remote = set(_yield_remote_relative_paths_md5(bucket_name))
+    local = set(_yield_local_relative_paths_md5(source))
+
+    for path, md5 in remote - local:
+        s3.delete_object(Bucket=bucket_name, Key=path)
+        s3.get_waiter("object_not_exists").wait(Bucket=bucket_name, Key=path)
+
+    for path, md5 in local - remote:
+        s3.upload_file(os.path.join(source, path), bucket_name, path, ExtraArgs={"ACL": "public-read", "Metadata": {"md5": md5}})
+        s3.get_waiter("object_exists").wait(Bucket=bucket_name, Key=path)
 
 
 def download_files(bucket_name=default_bucket_name, target=tempfile.mkdtemp()):
@@ -96,9 +103,8 @@ def download_files(bucket_name=default_bucket_name, target=tempfile.mkdtemp()):
 
 
 def delete_files(bucket_name=default_bucket_name):
-    for key, _ in _yield_remote_relative_paths_md5(bucket_name):
-        s3.delete_object(Bucket=bucket_name, Key=key)
-        s3.get_waiter("object_not_exists").wait(Bucket=bucket_name, Key=key)
+    with tempfile.TemporaryDirectory() as tmpdir:
+        upload_files(bucket_name, tmpdir)
 
 
 def _get_arn(bucket_name):

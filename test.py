@@ -10,10 +10,14 @@ import prbg
 import bli
 
 bucket_name = "test.mazerty.fr"
-result = {("file1", "e382ac6f66df7fb71dae6292810182eb"),
-          ("file2", "260b6f5bf4fdfe7be7cea1737b41e797"),
-          ("file3", "7d5f31ffd43f957a4f4f8982ef65b12d"),
-          ("directory/file4", "803ab14c32a1b1cdf9b19d7417908e43")}
+result1 = {("file1", "e382ac6f66df7fb71dae6292810182eb"),
+           ("file2", "260b6f5bf4fdfe7be7cea1737b41e797"),
+           ("file3", "7d5f31ffd43f957a4f4f8982ef65b12d"),
+           ("directory/file4", "803ab14c32a1b1cdf9b19d7417908e43")}
+result2 = {("file1", "e382ac6f66df7fb71dae6292810182eb"),
+           ("file2", "260b6f5bf4fdfe7be7cea1737b41e797"),
+           ("file3", "0bc7622b9fbe4f9c5705270b22d3f683"),
+           ("directory/file5", "23d235db483342f9df6200f0871dfcb2")}
 
 
 def _write_prf(directory, name, size=1000):
@@ -38,16 +42,22 @@ class TestCase(unittest.TestCase):
             _write_prf(tmpdir, "file1")
             _write_prf(tmpdir, "file2")
             _write_prf(tmpdir, "file3")
-            _write_prf(directory, "file4")
-            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result)
+            file4 = _write_prf(directory, "file4")
+            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result1)
 
             bli.create_bucket(bucket_name)
             bli.upload_files(bucket_name, tmpdir)
-            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result)
+            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result1)
+
+            os.remove(file4)
+            _write_prf(directory, "file5")
+            _write_prf(tmpdir, "file3", 2000)
+            bli.upload_files(bucket_name, tmpdir)
+            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result2)
 
         with tempfile.TemporaryDirectory() as tmpdir:
             bli.download_files(bucket_name, tmpdir)
-            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result)
+            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result2)
 
         bli.delete_files(bucket_name)
         self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), set())
