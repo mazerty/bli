@@ -5,7 +5,7 @@ import unittest
 
 import prbg
 
-import bli
+import s3llar
 
 bucket_name = "test.mazerty.fr"
 
@@ -38,10 +38,10 @@ def _write_prf(directory: str, name: str, size: int = 1000) -> str:
 class TestCase(unittest.TestCase):
     def test_md5(self):
         with tempfile.TemporaryDirectory() as tmpdir:
-            self.assertEqual(bli._md5(_write_prf(tmpdir, "dummy")), "dc66e4a23e6b7873679da03302c37331")
+            self.assertEqual(s3llar._md5(_write_prf(tmpdir, "dummy")), "dc66e4a23e6b7873679da03302c37331")
 
     def test_bucket(self):
-        bli.create_bucket(bucket_name)
+        s3llar.create_bucket(bucket_name)
 
         # part 1: upload
         with tempfile.TemporaryDirectory() as tmpdir:
@@ -65,13 +65,13 @@ class TestCase(unittest.TestCase):
             _write_prf(hidden_directory, "ignored_file")
 
             # tests listing the local files
-            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result1)
+            self.assertSetEqual(set(s3llar._yield_local_relative_paths_md5(tmpdir)), result1)
 
             # tests uploading the files
-            bli.upload_files(bucket_name, tmpdir)
+            s3llar.upload_files(bucket_name, tmpdir)
 
             # tests listing the remote files
-            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result1)
+            self.assertSetEqual(set(s3llar._yield_remote_relative_paths_md5(bucket_name)), result1)
 
             # adds, changes, deletes files in the source directory
             _write_prf(directory, "file5")
@@ -79,21 +79,21 @@ class TestCase(unittest.TestCase):
             os.remove(file4)
 
             # tests updating the files
-            bli.upload_files(bucket_name, tmpdir)
+            s3llar.upload_files(bucket_name, tmpdir)
 
             # tests listing the updated remote files
-            self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), result2)
+            self.assertSetEqual(set(s3llar._yield_remote_relative_paths_md5(bucket_name)), result2)
 
         # part 2: download
         with tempfile.TemporaryDirectory() as tmpdir:
             # tests downloading the files in another directory
-            bli.download_files(bucket_name, tmpdir)
+            s3llar.download_files(bucket_name, tmpdir)
 
             # tests listing the local files
-            self.assertSetEqual(set(bli._yield_local_relative_paths_md5(tmpdir)), result2)
+            self.assertSetEqual(set(s3llar._yield_local_relative_paths_md5(tmpdir)), result2)
 
         # part 3: delete
-        bli.delete_files(bucket_name)
-        self.assertSetEqual(set(bli._yield_remote_relative_paths_md5(bucket_name)), set())
+        s3llar.delete_files(bucket_name)
+        self.assertSetEqual(set(s3llar._yield_remote_relative_paths_md5(bucket_name)), set())
 
-        bli.delete_bucket(bucket_name)
+        s3llar.delete_bucket(bucket_name)
